@@ -1,4 +1,4 @@
-import type { ServerRequest } from "@sveltejs/kit/types/endpoint";
+import type { ServerRequest } from "@sveltejs/kit/types/hooks";
 import type { Auth } from "../auth";
 import type { CallbackResult } from "../types";
 import { OAuth2BaseProvider, OAuth2BaseProviderConfig } from "./oauth2.base";
@@ -47,8 +47,7 @@ export class TwitterAuthProvider extends OAuth2BaseProvider<any, any, TwitterAut
       oauth_token: oauthToken,
     };
 
-    const url = `${endpoint}?${new URLSearchParams(data)}`;
-    return url;
+    return `${endpoint}?${new URLSearchParams(data)}`;
   }
 
   async getTokens(oauthToken: string, oauthVerifier: string) {

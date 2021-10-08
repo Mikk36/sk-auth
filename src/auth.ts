@@ -1,11 +1,12 @@
 import type { GetSession, RequestHandler } from "@sveltejs/kit";
-import type { EndpointOutput, ServerRequest } from "@sveltejs/kit/types/endpoint";
-import type { Headers } from "@sveltejs/kit/types/helper";
+import type { EndpointOutput } from "@sveltejs/kit/types/endpoint";
+import type { RequestHeaders } from "@sveltejs/kit/types/helper";
 import cookie from "cookie";
 import * as jsonwebtoken from "jsonwebtoken";
 import type { JWT, Session } from "./interfaces";
 import { join } from "./path";
 import type { Provider } from "./providers";
+import { ServerRequest } from "@sveltejs/kit/types/hooks";
 
 interface AuthConfig {
   providers: Provider[];
@@ -24,6 +25,8 @@ interface AuthCallbacks {
 }
 
 export class Auth {
+  public scheme = "http";
+
   constructor(private readonly config?: AuthConfig) {}
 
   get basePath() {
@@ -43,7 +46,7 @@ export class Auth {
     return "svelte_auth_secret";
   }
 
-  async getToken(headers: Headers) {
+  async getToken(headers: RequestHeaders) {
     if (!headers.cookie) {
       return null;
     }
@@ -69,12 +72,11 @@ export class Auth {
   }
 
   getBaseUrl(host?: string) {
-    return this.config?.host ?? `http://${host}`;
+    return this.config?.host ?? `${this.scheme}://${host}`;
   }
 
   getPath(path: string) {
-    const pathname = join([this.basePath, path]);
-    return pathname;
+    return join([this.basePath, path]);
   }
 
   getUrl(path: string, host?: string) {
@@ -82,7 +84,7 @@ export class Auth {
     return new URL(pathname, this.getBaseUrl(host)).href;
   }
 
-  setToken(headers: Headers, newToken: JWT | any) {
+  setToken(headers: RequestHeaders, newToken: JWT | any) {
     const originalToken = this.getToken(headers);
 
     return {
@@ -97,8 +99,7 @@ export class Auth {
           expiresIn: this.config?.jwtExpiresIn ?? "30d",
         }
       : {};
-    const jwt = jsonwebtoken.sign(token, this.getJwtSecret(), opts);
-    return jwt;
+    return jsonwebtoken.sign(token, this.getJwtSecret(), opts);
   }
 
   async getRedirectUrl(host: string, redirectUrl?: string) {

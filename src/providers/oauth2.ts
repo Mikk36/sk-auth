@@ -1,4 +1,4 @@
-import type { ServerRequest } from "@sveltejs/kit/types/endpoint";
+import type { ServerRequest } from "@sveltejs/kit/types/hooks";
 import type { Auth } from "../auth";
 import { ucFirst } from "../helpers";
 import { OAuth2BaseProvider, OAuth2BaseProviderConfig, OAuth2Tokens } from "./oauth2.base";
@@ -25,11 +25,10 @@ const defaultConfig: Partial<OAuth2ProviderConfig> = {
   contentType: "application/json",
 };
 
-export class OAuth2Provider<
-  ProfileType = any,
+export class OAuth2Provider<ProfileType = any,
   TokensType extends OAuth2Tokens = OAuth2Tokens,
   ConfigType extends OAuth2ProviderConfig = OAuth2ProviderConfig<ProfileType, TokensType>,
-> extends OAuth2BaseProvider<ProfileType, TokensType, ConfigType> {
+  > extends OAuth2BaseProvider<ProfileType, TokensType, ConfigType> {
   constructor(config: ConfigType) {
     super({
       ...defaultConfig,
@@ -37,7 +36,16 @@ export class OAuth2Provider<
     });
   }
 
-  getAuthorizationUrl({ host }: ServerRequest, auth: Auth, state: string, nonce: string) {
+  getAuthorizationUrl({ host, headers }: ServerRequest, auth: Auth, state: string, nonce: string) {
+    if (":scheme" in headers) {
+      auth.scheme = headers[":scheme"];
+    }
+    if ("x-forwarded-proto" in headers) {
+      auth.scheme = headers["x-forwarded-proto"];
+    }
+    if (host === undefined && ":authority" in headers) {
+      host = headers[":authority"];
+    }
     const data = {
       state,
       nonce,
@@ -48,8 +56,7 @@ export class OAuth2Provider<
       ...(this.config.authorizationParams ?? {}),
     };
 
-    const url = `${this.config.authorizationUrl}?${new URLSearchParams(data)}`;
-    return url;
+    return `${this.config.authorizationUrl}?${new URLSearchParams(data)}`;
   }
 
   async getTokens(code: string, redirectUri: string): Promise<TokensType> {
