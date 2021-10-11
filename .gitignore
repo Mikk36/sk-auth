@@ -77,3 +77,6 @@ typings/
 
 # Build output
 dist/*
+
+# Jetbrains
+.idea
