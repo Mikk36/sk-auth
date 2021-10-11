@@ -1,6 +1,6 @@
 {
-  "name": "sk-auth",
-  "version": "0.3.7",
+  "name": "@mikk36/sk-auth",
+  "version": "0.3.9",
   "description": "Authentication library for use with SvelteKit featuring built-in OAuth providers and zero restriction customization!",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
@@ -43,7 +43,8 @@
   "private": false,
   "dependencies": {
     "cookie": "^0.4.1",
-    "jsonwebtoken": "^8.5.1"
+    "jsonwebtoken": "^8.5.1",
+    "node-fetch": "3"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^8.2.1",

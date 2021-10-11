@@ -8,6 +8,24 @@ const globals = {
   ...packageJson.devDependencies,
 };
 
+function retainImportExpressionPlugin() {
+  return {
+    name: 'retain-import-expression',
+    resolveDynamicImport(specifier) {
+      if (specifier === 'node-fetch') return false;
+      return null;
+    },
+    renderDynamicImport({ targetModuleId }) {
+      if (targetModuleId === 'node-fetch') {
+        return {
+          left: 'import(',
+          right: ')'
+        };
+      }
+    }
+  };
+}
+
 /** @type {import('rollup').RollupOptions} */
 const baseConfig = {
   input: ["src/**/*.ts"],
@@ -21,6 +39,7 @@ const baseConfig = {
       emitDeclarationOnly: true,
       sourceMap: false,
     }),
+    retainImportExpressionPlugin()
   ],
   external: [
     ...Object.keys(globals),

@@ -78,7 +78,8 @@ export class OAuth2Provider<ProfileType = any,
       body = JSON.stringify(data);
     }
 
-    const res = await fetch(this.config.accessTokenUrl!, {
+    const { default: nodeFetch } = await import("node-fetch");
+    const res = await nodeFetch(this.config.accessTokenUrl!, {
       body,
       method: "POST",
       headers: {
@@ -91,7 +92,8 @@ export class OAuth2Provider<ProfileType = any,
   }
 
   async getUserProfile(tokens: TokensType): Promise<ProfileType> {
-    const res = await fetch(this.config.profileUrl!, {
+    const { default: nodeFetch } = await import("node-fetch");
+    const res = await nodeFetch(this.config.profileUrl!, {
       headers: { Authorization: `${ucFirst(tokens.token_type)} ${tokens.access_token}` },
     });
     return await res.json();
