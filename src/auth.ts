@@ -15,6 +15,7 @@ interface AuthConfig {
   jwtExpiresIn?: string | number;
   host?: string;
   basePath?: string;
+  trailingSlash?: boolean;
 }
 
 interface AuthCallbacks {
@@ -76,7 +77,7 @@ export class Auth {
   }
 
   getPath(path: string) {
-    return join([this.basePath, path]);
+    return join([this.basePath, path, this.config?.trailingSlash ? "/" : ""]);
   }
 
   getUrl(path: string, host?: string) {
