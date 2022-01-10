@@ -28,7 +28,8 @@ interface AuthCallbacks {
 export class Auth {
   public scheme = "http";
 
-  constructor(private readonly config?: AuthConfig) {}
+  constructor(private readonly config?: AuthConfig) {
+  }
 
   get basePath() {
     return this.config?.basePath ?? "/api/auth";
@@ -97,8 +98,8 @@ export class Auth {
   signToken(token: JWT) {
     const opts = !token.exp
       ? {
-          expiresIn: this.config?.jwtExpiresIn ?? "30d",
-        }
+        expiresIn: this.config?.jwtExpiresIn ?? "30d",
+      }
       : {};
     return jsonwebtoken.sign(token, this.getJwtSecret(), opts);
   }
@@ -115,7 +116,7 @@ export class Auth {
     request: ServerRequest,
     provider: Provider,
   ): Promise<EndpointOutput> {
-    const { headers, host } = request;
+    const { headers, url: { host } } = request;
     const [profile, redirectUrl] = await provider.callback(request, this);
 
     let token = (await this.getToken(headers)) ?? { user: {} };
@@ -138,9 +139,9 @@ export class Auth {
   }
 
   async handleEndpoint(request: ServerRequest): Promise<EndpointOutput> {
-    const { path, headers, method, host } = request;
+    const { url: {pathname, host}, headers, method } = request;
 
-    if (path === this.getPath("signout")) {
+    if (pathname === this.getPath("signout")) {
       const token = this.setToken(headers, {});
       const jwt = this.signToken(token);
 
@@ -167,7 +168,7 @@ export class Auth {
     }
 
     const regex = new RegExp(join([this.basePath, `(?<method>signin|callback)/(?<provider>\\w+)`]));
-    const match = path.match(regex);
+    const match = pathname.match(regex);
 
     if (match && match.groups) {
       const provider = this.config?.providers?.find(
@@ -189,11 +190,11 @@ export class Auth {
   }
 
   get: RequestHandler = async (request) => {
-    const { path } = request;
+    const { url: {pathname} } = request;
 
-    if (path === this.getPath("csrf")) {
+    if (pathname === this.getPath("csrf")) {
       return { body: "1234" }; // TODO: Generate real token
-    } else if (path === this.getPath("session")) {
+    } else if (pathname === this.getPath("session")) {
       const session = await this.getSession(request);
       return {
         body: {

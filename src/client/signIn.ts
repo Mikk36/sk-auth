@@ -1,7 +1,3 @@
-/* import { goto } from "@sveltejs/kit/assets/runtime/app/navigation";
-import { page } from "@sveltejs/kit/assets/runtime/app/stores"; */
-import type { Page } from "@sveltejs/kit";
-
 interface SignInConfig {
   redirectUrl?: string;
 }
@@ -23,10 +19,9 @@ export async function signIn(provider: string, data?: any, config?: SignInConfig
   if (config?.redirectUrl) {
     redirectUrl = config.redirectUrl;
   } else {
-    let $val: Page | undefined;
-    /* page.subscribe(($) => ($val = $))(); */
+    let $val: any | undefined;
     if ($val) {
-      redirectUrl = `${$val.host}${$val.path}?${$val.query}`;
+      redirectUrl = `${$val.url.host}${$val.url.path}?${$val.url.query}`;
     }
   }
 
@@ -34,7 +29,5 @@ export async function signIn(provider: string, data?: any, config?: SignInConfig
     redirect: redirectUrl ?? "/",
   };
   const query = new URLSearchParams(queryData);
-  const path = `/api/auth/login/${provider}?${query}`;
-
-  return path; // await goto(path);
+  return `/api/auth/login/${provider}?${query}`;
 }

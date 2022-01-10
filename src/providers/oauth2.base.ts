@@ -35,9 +35,9 @@ export abstract class OAuth2BaseProvider<ProfileType,
   abstract getUserProfile(tokens: any): ProfileType | Promise<ProfileType>;
 
   async signin(request: ServerRequest, auth: Auth): Promise<EndpointOutput> {
-    const { method, query } = request;
-    let { host } = request;
-    if (host === undefined && ":authority" in request.headers) {
+    const { method, url: {searchParams} } = request;
+    let { url: {host} } = request;
+    if (host === "undefined" && ":authority" in request.headers) {
       host = request.headers[":authority"];
     }
     if (":scheme" in request.headers) {
@@ -46,15 +46,15 @@ export abstract class OAuth2BaseProvider<ProfileType,
     if ("x-forwarded-proto" in request.headers) {
       auth.scheme = request.headers["x-forwarded-proto"];
     }
-    const state = [`redirect=${query.get("redirect") ?? this.getUri(auth, "/", host)}`].join(",");
+    const state = [`redirect=${searchParams.get("redirect") ?? this.getUri(auth, "/", host)}`].join(",");
     const base64State = Buffer.from(state).toString("base64");
     const nonce = Math.round(Math.random() * 1000).toString(); // TODO: Generate random based on user values
-    const url = await this.getAuthorizationUrl(request, auth, base64State, nonce);
+    const redirectUrl = await this.getAuthorizationUrl(request, auth, base64State, nonce);
 
     if (method === "POST") {
       return {
         body: {
-          redirect: url,
+          redirect: redirectUrl,
         },
       };
     }
@@ -62,7 +62,7 @@ export abstract class OAuth2BaseProvider<ProfileType,
     return {
       status: 302,
       headers: {
-        Location: url,
+        Location: redirectUrl,
       },
     };
   }
@@ -77,8 +77,8 @@ export abstract class OAuth2BaseProvider<ProfileType,
     }
   }
 
-  async callback({ query, host, headers }: ServerRequest, auth: Auth): Promise<CallbackResult> {
-    if (host === undefined && ":authority" in headers) {
+  async callback({ url: {host, searchParams}, headers }: ServerRequest, auth: Auth): Promise<CallbackResult> {
+    if (host === "undefined" && ":authority" in headers) {
       host = headers[":authority"];
     }
     if (":scheme" in headers) {
@@ -88,8 +88,8 @@ export abstract class OAuth2BaseProvider<ProfileType,
       auth.scheme = headers["x-forwarded-proto"];
     }
 
-    const code = query.get("code");
-    const redirect = this.getStateValue(query, "redirect");
+    const code = searchParams.get("code");
+    const redirect = this.getStateValue(searchParams, "redirect");
 
     const tokens = await this.getTokens(code!, this.getCallbackUri(auth, host));
     let user = await this.getUserProfile(tokens);

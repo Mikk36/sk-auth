@@ -36,14 +36,14 @@ export class OAuth2Provider<ProfileType = any,
     });
   }
 
-  getAuthorizationUrl({ host, headers }: ServerRequest, auth: Auth, state: string, nonce: string) {
+  getAuthorizationUrl({ url: { host }, headers }: ServerRequest, auth: Auth, state: string, nonce: string) {
     if (":scheme" in headers) {
       auth.scheme = headers[":scheme"];
     }
     if ("x-forwarded-proto" in headers) {
       auth.scheme = headers["x-forwarded-proto"];
     }
-    if (host === undefined && ":authority" in headers) {
+    if (host === "undefined" && ":authority" in headers) {
       host = headers[":authority"];
     }
     const data = {
@@ -88,7 +88,7 @@ export class OAuth2Provider<ProfileType = any,
       },
     });
 
-    return await res.json();
+    return <TokensType>await res.json();
   }
 
   async getUserProfile(tokens: TokensType): Promise<ProfileType> {
@@ -96,6 +96,6 @@ export class OAuth2Provider<ProfileType = any,
     const res = await nodeFetch(this.config.profileUrl!, {
       headers: { Authorization: `${ucFirst(tokens.token_type)} ${tokens.access_token}` },
     });
-    return await res.json();
+    return <ProfileType>await res.json();
   }
 }

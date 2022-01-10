@@ -1,5 +1,3 @@
-/* import { session as session$ } from "$app/stores"; */
-
 export async function signOut() {
   let res = await fetch("/api/auth/signout", { method: "POST" });
   const { signout } = await res.json();
@@ -9,7 +7,5 @@ export async function signOut() {
   }
 
   res = await fetch("/api/auth/session");
-  const session = await res.json();
-
-  return session;
+  return await res.json();
 }
