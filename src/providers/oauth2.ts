@@ -1,7 +1,7 @@
-import type { ServerRequest } from "@sveltejs/kit/types/hooks";
 import type { Auth } from "../auth";
 import { ucFirst } from "../helpers";
 import { OAuth2BaseProvider, OAuth2BaseProviderConfig, OAuth2Tokens } from "./oauth2.base";
+import type { RequestEvent } from "@sveltejs/kit";
 
 export interface OAuth2ProviderConfig<ProfileType = any, TokensType extends OAuth2Tokens = any>
   extends OAuth2BaseProviderConfig<ProfileType, TokensType> {
@@ -36,15 +36,10 @@ export class OAuth2Provider<ProfileType = any,
     });
   }
 
-  getAuthorizationUrl({ url: { host }, headers }: ServerRequest, auth: Auth, state: string, nonce: string) {
-    if (":scheme" in headers) {
-      auth.scheme = headers[":scheme"];
-    }
-    if ("x-forwarded-proto" in headers) {
-      auth.scheme = headers["x-forwarded-proto"];
-    }
-    if (host === "undefined" && ":authority" in headers) {
-      host = headers[":authority"];
+  getAuthorizationUrl({ url: { host, protocol }, request: { headers } }: RequestEvent, auth: Auth, state: string, nonce: string) {
+    auth.scheme = protocol;
+    if (host === "undefined" && headers.has("authority")) {
+      host = <string>headers.get("authority");
     }
     const data = {
       state,

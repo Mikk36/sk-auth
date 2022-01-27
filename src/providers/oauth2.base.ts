@@ -1,8 +1,8 @@
 import type { EndpointOutput } from "@sveltejs/kit/types/endpoint";
-import type { ServerRequest } from "@sveltejs/kit/types/hooks";
 import type { Auth } from "../auth";
 import type { CallbackResult } from "../types";
 import { Provider, ProviderConfig } from "./base";
+import type { RequestEvent } from "@sveltejs/kit";
 
 export interface OAuth2Tokens {
   access_token: string;
@@ -24,7 +24,7 @@ export abstract class OAuth2BaseProvider<ProfileType,
   T extends OAuth2BaseProviderConfig,
   > extends Provider<T> {
   abstract getAuthorizationUrl(
-    request: ServerRequest,
+    event: RequestEvent,
     auth: Auth,
     state: string,
     nonce: string,
@@ -34,22 +34,17 @@ export abstract class OAuth2BaseProvider<ProfileType,
 
   abstract getUserProfile(tokens: any): ProfileType | Promise<ProfileType>;
 
-  async signin(request: ServerRequest, auth: Auth): Promise<EndpointOutput> {
-    const { method, url: {searchParams} } = request;
-    let { url: {host} } = request;
-    if (host === "undefined" && ":authority" in request.headers) {
-      host = request.headers[":authority"];
+  async signin(event: RequestEvent, auth: Auth): Promise<EndpointOutput> {
+    const { request: { method, headers }, url: {protocol, searchParams} } = event;
+    let { url: {host} } = event;
+    if (host === "undefined" && headers.has("authority")) {
+      host = <string>headers.get("authority");
     }
-    if (":scheme" in request.headers) {
-      auth.scheme = request.headers[":scheme"];
-    }
-    if ("x-forwarded-proto" in request.headers) {
-      auth.scheme = request.headers["x-forwarded-proto"];
-    }
+    auth.scheme = protocol;
     const state = [`redirect=${searchParams.get("redirect") ?? this.getUri(auth, "/", host)}`].join(",");
     const base64State = Buffer.from(state).toString("base64");
     const nonce = Math.round(Math.random() * 1000).toString(); // TODO: Generate random based on user values
-    const redirectUrl = await this.getAuthorizationUrl(request, auth, base64State, nonce);
+    const redirectUrl = await this.getAuthorizationUrl(event, auth, base64State, nonce);
 
     if (method === "POST") {
       return {
@@ -77,16 +72,11 @@ export abstract class OAuth2BaseProvider<ProfileType,
     }
   }
 
-  async callback({ url: {host, searchParams}, headers }: ServerRequest, auth: Auth): Promise<CallbackResult> {
-    if (host === "undefined" && ":authority" in headers) {
-      host = headers[":authority"];
+  async callback({ url: {host, protocol, searchParams}, request: { headers } }: RequestEvent, auth: Auth): Promise<CallbackResult> {
+    if (host === "undefined" && headers.has("authority")) {
+      host = <string>headers.get("authority");
     }
-    if (":scheme" in headers) {
-      auth.scheme = headers[":scheme"];
-    }
-    if ("x-forwarded-proto" in headers) {
-      auth.scheme = headers["x-forwarded-proto"];
-    }
+    auth.scheme = protocol;
 
     const code = searchParams.get("code");
     const redirect = this.getStateValue(searchParams, "redirect");
