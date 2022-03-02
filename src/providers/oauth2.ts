@@ -41,6 +41,9 @@ export class OAuth2Provider<ProfileType = any,
     if (host === "undefined" && headers.has("authority")) {
       host = <string>headers.get("authority");
     }
+    if (host === "undefined" && headers.has("referer")) {
+      host = <string>headers.get("referer");
+    }
     const data = {
       state,
       nonce,
