@@ -42,7 +42,7 @@ export class OAuth2Provider<ProfileType = any,
       host = <string>headers.get("authority");
     }
     if (host === "undefined" && headers.has("referer")) {
-      host = <string>headers.get("referer");
+      host = new URL(<string>headers.get("referer")).host;
     }
     const data = {
       state,

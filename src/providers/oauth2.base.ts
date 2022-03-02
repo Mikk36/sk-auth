@@ -37,10 +37,13 @@ export abstract class OAuth2BaseProvider<ProfileType,
   async signin(event: RequestEvent, auth: Auth): Promise<EndpointOutput> {
     const { request: { method, headers }, url: {protocol, searchParams} } = event;
     let { url: {host} } = event;
+    auth.scheme = protocol;
     if (host === "undefined" && headers.has("authority")) {
       host = <string>headers.get("authority");
     }
-    auth.scheme = protocol;
+    if (host === "undefined" && headers.has("referer")) {
+      host = new URL(<string>headers.get("referer")).host;
+    }
     const state = [`redirect=${searchParams.get("redirect") ?? this.getUri(auth, "/", host)}`].join(",");
     const base64State = Buffer.from(state).toString("base64");
     const nonce = Math.round(Math.random() * 1000).toString(); // TODO: Generate random based on user values
@@ -73,10 +76,13 @@ export abstract class OAuth2BaseProvider<ProfileType,
   }
 
   async callback({ url: {host, protocol, searchParams}, request: { headers } }: RequestEvent, auth: Auth): Promise<CallbackResult> {
+    auth.scheme = protocol;
     if (host === "undefined" && headers.has("authority")) {
       host = <string>headers.get("authority");
     }
-    auth.scheme = protocol;
+    if (host === "undefined" && headers.has("referer")) {
+      host = new URL(<string>headers.get("referer")).host;
+    }
 
     const code = searchParams.get("code");
     const redirect = this.getStateValue(searchParams, "redirect");
