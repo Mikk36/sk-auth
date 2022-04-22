@@ -1,5 +1,6 @@
-import type { GetSession, RequestEvent, RequestHandler } from "@sveltejs/kit";
+import type { GetSession, RequestHandler } from "@sveltejs/kit";
 import type { EndpointOutput } from "@sveltejs/kit/types/endpoint";
+import { RequestEvent } from "@sveltejs/kit/types/hooks";
 import cookie from "cookie";
 import * as jsonwebtoken from "jsonwebtoken";
 import type { JWT, Session } from "./interfaces";
@@ -12,6 +13,7 @@ interface AuthConfig {
   jwtSecret?: string;
   jwtExpiresIn?: string | number;
   host?: string;
+  protocol?: string;
   basePath?: string;
   trailingSlash?: boolean;
 }
@@ -24,10 +26,7 @@ interface AuthCallbacks {
 }
 
 export class Auth {
-  public scheme = "http:";
-
-  constructor(private readonly config?: AuthConfig) {
-  }
+  constructor(private readonly config?: AuthConfig) {}
 
   get basePath() {
     return this.config?.basePath ?? "/api/auth";
@@ -46,8 +45,8 @@ export class Auth {
     return "svelte_auth_secret";
   }
 
-  async getToken(headers: Headers) {
-    if (!headers.has("cookie")) {
+  async getToken(headers: any) {
+    if (!headers.get("cookie")) {
       return null;
     }
 
@@ -72,7 +71,9 @@ export class Auth {
   }
 
   getBaseUrl(host?: string) {
-    return this.config?.host ?? `${this.scheme}//${host}`;
+    const protocol = this.config?.protocol ?? "https";
+    host = this.config?.host ?? host;
+    return `${protocol}://${host}`;
   }
 
   getPath(path: string) {
@@ -84,7 +85,7 @@ export class Auth {
     return new URL(pathname, this.getBaseUrl(host)).href;
   }
 
-  setToken(headers: Headers, newToken: JWT | any) {
+  setToken(headers: any, newToken: JWT | any) {
     const originalToken = this.getToken(headers);
 
     return {
@@ -96,10 +97,11 @@ export class Auth {
   signToken(token: JWT) {
     const opts = !token.exp
       ? {
-        expiresIn: this.config?.jwtExpiresIn ?? "30d",
-      }
+          expiresIn: this.config?.jwtExpiresIn ?? "30d",
+        }
       : {};
-    return jsonwebtoken.sign(token, this.getJwtSecret(), opts);
+    const jwt = jsonwebtoken.sign(token, this.getJwtSecret(), opts);
+    return jwt;
   }
 
   async getRedirectUrl(host: string, redirectUrl?: string) {
@@ -110,11 +112,9 @@ export class Auth {
     return redirect;
   }
 
-  async handleProviderCallback(
-    event: RequestEvent,
-    provider: Provider,
-  ): Promise<EndpointOutput> {
-    const { request: { headers }, url: { host } } = event;
+  async handleProviderCallback(event: RequestEvent, provider: Provider): Promise<EndpointOutput> {
+    const { headers } = event.request;
+    const { url } = event;
     const [profile, redirectUrl] = await provider.callback(event, this);
 
     let token = (await this.getToken(headers)) ?? { user: {} };
@@ -125,7 +125,7 @@ export class Auth {
     }
 
     const jwt = this.signToken(token);
-    const redirect = await this.getRedirectUrl(host, redirectUrl ?? undefined);
+    const redirect = await this.getRedirectUrl(url.host, redirectUrl ?? undefined);
 
     return {
       status: 302,
@@ -137,9 +137,10 @@ export class Auth {
   }
 
   async handleEndpoint(event: RequestEvent): Promise<EndpointOutput> {
-    const { url: { pathname, host }, request: { headers, method } } = event;
+    const { headers, method } = event.request;
+    const { url } = event;
 
-    if (pathname === this.getPath("signout")) {
+    if (url.pathname === this.getPath("signout")) {
       const token = this.setToken(headers, {});
       const jwt = this.signToken(token);
 
@@ -154,7 +155,7 @@ export class Auth {
         };
       }
 
-      const redirect = await this.getRedirectUrl(host);
+      const redirect = await this.getRedirectUrl(url.host);
 
       return {
         status: 302,
@@ -166,7 +167,7 @@ export class Auth {
     }
 
     const regex = new RegExp(join([this.basePath, `(?<method>signin|callback)/(?<provider>\\w+)`]));
-    const match = pathname.match(regex);
+    const match = url.pathname.match(regex);
 
     if (match && match.groups) {
       const provider = this.config?.providers?.find(
@@ -187,12 +188,12 @@ export class Auth {
     };
   }
 
-  get: RequestHandler = async (event) => {
-    const { url: { pathname } } = event;
+  get: RequestHandler = async (event: RequestEvent): Promise<any> => {
+    const { url } = event;
 
-    if (pathname === this.getPath("csrf")) {
+    if (url.pathname === this.getPath("csrf")) {
       return { body: "1234" }; // TODO: Generate real token
-    } else if (pathname === this.getPath("session")) {
+    } else if (url.pathname === this.getPath("session")) {
       const session = await this.getSession(event);
       return {
         body: {
@@ -204,11 +205,12 @@ export class Auth {
     return await this.handleEndpoint(event);
   };
 
-  post: RequestHandler = async (event) => {
+  post: RequestHandler = async (event: RequestEvent) => {
     return await this.handleEndpoint(event);
   };
 
-  getSession: GetSession = async ({ request }) => {
+  getSession: GetSession = async (event: RequestEvent) => {
+    const { request } = event;
     const token = await this.getToken(request.headers);
 
     if (token) {

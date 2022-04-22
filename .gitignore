@@ -76,7 +76,7 @@ typings/
 .fusebox/
 
 # Build output
-dist/*
+dist/
 
 # Jetbrains
 .idea

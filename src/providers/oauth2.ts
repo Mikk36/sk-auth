@@ -1,7 +1,7 @@
+import { RequestEvent } from "@sveltejs/kit/types/hooks";
 import type { Auth } from "../auth";
 import { ucFirst } from "../helpers";
 import { OAuth2BaseProvider, OAuth2BaseProviderConfig, OAuth2Tokens } from "./oauth2.base";
-import type { RequestEvent } from "@sveltejs/kit";
 
 export interface OAuth2ProviderConfig<ProfileType = any, TokensType extends OAuth2Tokens = any>
   extends OAuth2BaseProviderConfig<ProfileType, TokensType> {
@@ -25,10 +25,11 @@ const defaultConfig: Partial<OAuth2ProviderConfig> = {
   contentType: "application/json",
 };
 
-export class OAuth2Provider<ProfileType = any,
+export class OAuth2Provider<
+  ProfileType = any,
   TokensType extends OAuth2Tokens = OAuth2Tokens,
   ConfigType extends OAuth2ProviderConfig = OAuth2ProviderConfig<ProfileType, TokensType>,
-  > extends OAuth2BaseProvider<ProfileType, TokensType, ConfigType> {
+> extends OAuth2BaseProvider<ProfileType, TokensType, ConfigType> {
   constructor(config: ConfigType) {
     super({
       ...defaultConfig,
@@ -36,25 +37,19 @@ export class OAuth2Provider<ProfileType = any,
     });
   }
 
-  getAuthorizationUrl({ url: { host, protocol }, request: { headers } }: RequestEvent, auth: Auth, state: string, nonce: string) {
-    auth.scheme = protocol;
-    if (host === "undefined" && headers.has("authority")) {
-      host = <string>headers.get("authority");
-    }
-    if (host === "undefined" && headers.has("referer")) {
-      host = new URL(<string>headers.get("referer")).host;
-    }
+  getAuthorizationUrl({ url }: RequestEvent, auth: Auth, state: string, nonce: string) {
     const data = {
       state,
       nonce,
       response_type: this.config.responseType,
       client_id: this.config.clientId,
       scope: Array.isArray(this.config.scope) ? this.config.scope.join(" ") : this.config.scope!,
-      redirect_uri: this.getCallbackUri(auth, host),
+      redirect_uri: this.getCallbackUri(auth, url.host),
       ...(this.config.authorizationParams ?? {}),
     };
 
-    return `${this.config.authorizationUrl}?${new URLSearchParams(data)}`;
+    const authUrl = `${this.config.authorizationUrl}?${new URLSearchParams(data)}`;
+    return authUrl;
   }
 
   async getTokens(code: string, redirectUri: string): Promise<TokensType> {
