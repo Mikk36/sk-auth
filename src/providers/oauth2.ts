@@ -1,4 +1,4 @@
-import { RequestEvent } from "@sveltejs/kit/types/hooks";
+import type { RequestEvent } from "@sveltejs/kit/types/private";
 import type { Auth } from "../auth";
 import { ucFirst } from "../helpers";
 import { OAuth2BaseProvider, OAuth2BaseProviderConfig, OAuth2Tokens } from "./oauth2.base";
@@ -25,11 +25,10 @@ const defaultConfig: Partial<OAuth2ProviderConfig> = {
   contentType: "application/json",
 };
 
-export class OAuth2Provider<
-  ProfileType = any,
+export class OAuth2Provider<ProfileType = any,
   TokensType extends OAuth2Tokens = OAuth2Tokens,
   ConfigType extends OAuth2ProviderConfig = OAuth2ProviderConfig<ProfileType, TokensType>,
-> extends OAuth2BaseProvider<ProfileType, TokensType, ConfigType> {
+  > extends OAuth2BaseProvider<ProfileType, TokensType, ConfigType> {
   constructor(config: ConfigType) {
     super({
       ...defaultConfig,

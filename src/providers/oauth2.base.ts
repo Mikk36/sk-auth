@@ -1,7 +1,6 @@
-import type { EndpointOutput } from "@sveltejs/kit/types/endpoint";
-import { RequestEvent } from "@sveltejs/kit/types/hooks";
+import type { RequestHandlerOutput } from "@sveltejs/kit";
+import type { MaybePromise, RequestEvent } from "@sveltejs/kit/types/private";
 import type { Auth } from "../auth";
-import type { CallbackResult } from "../types";
 import { Provider, ProviderConfig } from "./base";
 
 export interface OAuth2Tokens {
@@ -12,28 +11,29 @@ export interface OAuth2Tokens {
 export type ProfileCallback<ProfileType = any, TokensType = any, ReturnType = any> = (
   profile: ProfileType,
   tokens: TokensType,
-) => ReturnType | Promise<ReturnType>;
+) => MaybePromise<ReturnType>;
 
 export interface OAuth2BaseProviderConfig<ProfileType = any, TokensType = any>
   extends ProviderConfig {
   profile?: ProfileCallback<ProfileType, TokensType>;
 }
 
-export abstract class OAuth2BaseProvider<
-  ProfileType,
+export abstract class OAuth2BaseProvider<ProfileType,
   TokensType extends OAuth2Tokens,
   T extends OAuth2BaseProviderConfig,
-> extends Provider<T> {
+  > extends Provider<T> {
   abstract getAuthorizationUrl(
     event: RequestEvent,
     auth: Auth,
     state: string,
     nonce: string,
-  ): string | Promise<string>;
-  abstract getTokens(code: string, redirectUri: string): TokensType | Promise<TokensType>;
-  abstract getUserProfile(tokens: any): ProfileType | Promise<ProfileType>;
+  ): MaybePromise<string>;
 
-  async signin(event: RequestEvent, auth: Auth): Promise<EndpointOutput> {
+  abstract getTokens(code: string, redirectUri: string): MaybePromise<TokensType>;
+
+  abstract getUserProfile(tokens: any): MaybePromise<ProfileType>;
+
+  async signin(event: RequestEvent, auth: Auth): Promise<RequestHandlerOutput> {
     const { method } = event.request;
     const { url } = event;
     const state = [

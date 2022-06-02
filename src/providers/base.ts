@@ -1,11 +1,11 @@
-import type { EndpointOutput } from "@sveltejs/kit";
-import { RequestEvent } from "@sveltejs/kit/types/hooks";
+import type { RequestHandlerOutput } from "@sveltejs/kit";
+import type { MaybePromise, RequestEvent } from "@sveltejs/kit/types/private";
 import type { Auth } from "../auth";
 import type { CallbackResult } from "../types";
 
 export interface ProviderConfig {
   id?: string;
-  profile?: (profile: any, account: any) => any | Promise<any>;
+  profile?: (profile: any, account: any) => MaybePromise<any>;
 }
 
 export abstract class Provider<T extends ProviderConfig = ProviderConfig> {
@@ -30,10 +30,10 @@ export abstract class Provider<T extends ProviderConfig = ProviderConfig> {
   abstract signin<Locals extends Record<string, any> = Record<string, any>, Body = unknown>(
     event: RequestEvent,
     svelteKitAuth: Auth,
-  ): EndpointOutput | Promise<EndpointOutput>;
+  ): MaybePromise<RequestHandlerOutput>;
 
   abstract callback<Locals extends Record<string, any> = Record<string, any>, Body = unknown>(
     event: RequestEvent,
     svelteKitAuth: Auth,
-  ): CallbackResult | Promise<CallbackResult>;
+  ): MaybePromise<CallbackResult>;
 }

@@ -1,6 +1,5 @@
-import type { GetSession, RequestHandler } from "@sveltejs/kit";
-import type { EndpointOutput } from "@sveltejs/kit/types/endpoint";
-import { RequestEvent } from "@sveltejs/kit/types/hooks";
+import type { GetSession, RequestHandler, RequestHandlerOutput } from "@sveltejs/kit";
+import type { MaybePromise, RequestEvent } from "@sveltejs/kit/types/private";
 import cookie from "cookie";
 import * as jsonwebtoken from "jsonwebtoken";
 import type { JWT, Session } from "./interfaces";
@@ -19,14 +18,15 @@ interface AuthConfig {
 }
 
 interface AuthCallbacks {
-  signIn?: () => boolean | Promise<boolean>;
-  jwt?: (token: JWT, profile?: any) => JWT | Promise<JWT>;
-  session?: (token: JWT, session: Session) => Session | Promise<Session>;
-  redirect?: (url: string) => string | Promise<string>;
+  signIn?: () => MaybePromise<boolean>;
+  jwt?: (token: JWT, profile?: any) => MaybePromise<JWT>;
+  session?: (token: JWT, session: Session) => MaybePromise<Session>;
+  redirect?: (url: string) => MaybePromise<string>;
 }
 
 export class Auth {
-  constructor(private readonly config?: AuthConfig) {}
+  constructor(private readonly config?: AuthConfig) {
+  }
 
   get basePath() {
     return this.config?.basePath ?? "/api/auth";
@@ -97,8 +97,8 @@ export class Auth {
   signToken(token: JWT) {
     const opts = !token.exp
       ? {
-          expiresIn: this.config?.jwtExpiresIn ?? "30d",
-        }
+        expiresIn: this.config?.jwtExpiresIn ?? "30d",
+      }
       : {};
     const jwt = jsonwebtoken.sign(token, this.getJwtSecret(), opts);
     return jwt;
@@ -112,7 +112,7 @@ export class Auth {
     return redirect;
   }
 
-  async handleProviderCallback(event: RequestEvent, provider: Provider): Promise<EndpointOutput> {
+  async handleProviderCallback(event: RequestEvent, provider: Provider): Promise<RequestHandlerOutput> {
     const { headers } = event.request;
     const { url } = event;
     const [profile, redirectUrl] = await provider.callback(event, this);
@@ -136,7 +136,7 @@ export class Auth {
     };
   }
 
-  async handleEndpoint(event: RequestEvent): Promise<EndpointOutput> {
+  async handleEndpoint(event: RequestEvent): Promise<RequestHandlerOutput> {
     const { headers, method } = event.request;
     const { url } = event;
 
