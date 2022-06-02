@@ -47,8 +47,7 @@ export class OAuth2Provider<ProfileType = any,
       ...(this.config.authorizationParams ?? {}),
     };
 
-    const authUrl = `${this.config.authorizationUrl}?${new URLSearchParams(data)}`;
-    return authUrl;
+    return `${this.config.authorizationUrl}?${new URLSearchParams(data)}`;
   }
 
   async getTokens(code: string, redirectUri: string): Promise<TokensType> {

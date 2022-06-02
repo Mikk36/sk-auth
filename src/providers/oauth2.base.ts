@@ -70,7 +70,7 @@ export abstract class OAuth2BaseProvider<ProfileType,
   }
 
   async callback(event: RequestEvent, auth: Auth): Promise<any> {
-    const { request, url } = event;
+    const { url } = event;
     const code = url.searchParams.get("code");
     const redirect = this.getStateValue(url.searchParams, "redirect");
 

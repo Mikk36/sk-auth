@@ -46,8 +46,7 @@ export class TwitterAuthProvider extends OAuth2BaseProvider<any, any, TwitterAut
       oauth_token: oauthToken,
     };
 
-    const authUrl = `${endpoint}?${new URLSearchParams(data)}`;
-    return authUrl;
+    return `${endpoint}?${new URLSearchParams(data)}`;
   }
 
   async getTokens(oauthToken: string, oauthVerifier: string) {

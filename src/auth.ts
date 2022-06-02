@@ -100,8 +100,7 @@ export class Auth {
         expiresIn: this.config?.jwtExpiresIn ?? "30d",
       }
       : {};
-    const jwt = jsonwebtoken.sign(token, this.getJwtSecret(), opts);
-    return jwt;
+    return jsonwebtoken.sign(token, this.getJwtSecret(), opts);
   }
 
   async getRedirectUrl(host: string, redirectUrl?: string) {
