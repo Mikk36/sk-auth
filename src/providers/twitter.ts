@@ -1,4 +1,4 @@
-import type { RequestEvent } from "@sveltejs/kit/types/private";
+import type { RequestEvent } from "@sveltejs/kit";
 import type { Auth } from "../auth";
 import { OAuth2BaseProvider, OAuth2BaseProviderConfig } from "./oauth2.base";
 

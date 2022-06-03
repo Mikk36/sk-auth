@@ -1,4 +1,4 @@
-import type { RequestEvent } from "@sveltejs/kit/types/private";
+import type { RequestEvent } from "@sveltejs/kit";
 import type { Auth } from "../auth";
 import { ucFirst } from "../helpers";
 import { OAuth2BaseProvider, OAuth2BaseProviderConfig, OAuth2Tokens } from "./oauth2.base";
@@ -69,8 +69,7 @@ export class OAuth2Provider<ProfileType = any,
       body = JSON.stringify(data);
     }
 
-    const { default: nodeFetch } = await import("node-fetch");
-    const res = await nodeFetch(this.config.accessTokenUrl!, {
+    const res = await fetch(this.config.accessTokenUrl!, {
       body,
       method: "POST",
       headers: {
@@ -83,8 +82,7 @@ export class OAuth2Provider<ProfileType = any,
   }
 
   async getUserProfile(tokens: TokensType): Promise<ProfileType> {
-    const { default: nodeFetch } = await import("node-fetch");
-    const res = await nodeFetch(this.config.profileUrl!, {
+    const res = await fetch(this.config.profileUrl!, {
       headers: { Authorization: `${ucFirst(tokens.token_type)} ${tokens.access_token}` },
     });
     return <ProfileType>await res.json();

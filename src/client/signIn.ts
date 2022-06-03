@@ -1,6 +1,6 @@
 /* import { goto } from "@sveltejs/kit/assets/runtime/app/navigation";
 import { page } from "@sveltejs/kit/assets/runtime/app/stores"; */
-import type { LoadInput } from "@sveltejs/kit";
+import type { LoadEvent } from "@sveltejs/kit";
 import type { ClientRequestConfig } from "./types";
 
 interface SignInConfig extends ClientRequestConfig {
@@ -24,7 +24,7 @@ export async function signIn(provider: string, data?: any, config?: SignInConfig
   if (config?.redirectUrl) {
     redirectUrl = config.redirectUrl;
   } else {
-    let $val: LoadInput | undefined;
+    let $val: LoadEvent | undefined;
     /* page.subscribe(($) => ($val = $))(); */
     if ($val) {
       redirectUrl = `${$val.url.host}${$val.url.pathname}?${$val.url.searchParams}`;
@@ -35,7 +35,5 @@ export async function signIn(provider: string, data?: any, config?: SignInConfig
     redirect: redirectUrl ?? "/",
   };
   const query = new URLSearchParams(queryData);
-  const path = mergePath(["/api/auth", config?.basePath ?? null], `/signin/${provider}?${query}`);
-
-  return path; // await goto(path);
+  return mergePath(["/api/auth", config?.basePath ?? null], `/signin/${provider}?${query}`);
 }

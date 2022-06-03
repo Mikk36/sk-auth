@@ -1,5 +1,5 @@
-import type { GetSession, RequestHandler, RequestHandlerOutput } from "@sveltejs/kit";
-import type { MaybePromise, RequestEvent } from "@sveltejs/kit/types/private";
+import type { GetSession, RequestEvent, RequestHandler, RequestHandlerOutput } from "@sveltejs/kit";
+import type { MaybePromise } from "@sveltejs/kit/types/private";
 import cookie from "cookie";
 import * as jsonwebtoken from "jsonwebtoken";
 import type { JWT, Session } from "./interfaces";
@@ -126,10 +126,22 @@ export class Auth {
     const jwt = this.signToken(token);
     const redirect = await this.getRedirectUrl(url.host, redirectUrl ?? undefined);
 
+    const expires = new Date();
+    expires.setMonth(expires.getMonth() + 1);
+    const cookieData = cookie.serialize(
+      "svelteauthjwt",
+      jwt,
+      {
+        path: "/",
+        httpOnly: true,
+        expires,
+      },
+    );
+
     return {
       status: 302,
       headers: {
-        "set-cookie": `svelteauthjwt=${jwt}; Path=/; HttpOnly`,
+        "set-cookie": cookieData,
         Location: redirect,
       },
     };
@@ -143,10 +155,22 @@ export class Auth {
       const token = this.setToken(headers, {});
       const jwt = this.signToken(token);
 
+      const expires = new Date();
+      expires.setMonth(expires.getMonth() + 1);
+      const cookieData = cookie.serialize(
+        "svelteauthjwt",
+        jwt,
+        {
+          path: "/",
+          httpOnly: true,
+          expires,
+        },
+      );
+
       if (method === "POST") {
         return {
           headers: {
-            "set-cookie": `svelteauthjwt=${jwt}; Path=/; HttpOnly`,
+            "set-cookie": cookieData,
           },
           body: {
             signout: true,
@@ -159,7 +183,7 @@ export class Auth {
       return {
         status: 302,
         headers: {
-          "set-cookie": `svelteauthjwt=${jwt}; Path=/; HttpOnly`,
+          "set-cookie": cookieData,
           Location: redirect,
         },
       };

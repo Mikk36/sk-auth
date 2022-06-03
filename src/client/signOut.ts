@@ -13,7 +13,5 @@ export async function signOut(config?: ClientRequestConfig) {
   }
 
   res = await fetch(mergePath(["/api/auth", config?.basePath ?? null], "session"));
-  const session = await res.json();
-
-  return session;
+  return await res.json();
 }

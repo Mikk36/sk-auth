@@ -1,5 +1,5 @@
-import type { RequestHandlerOutput } from "@sveltejs/kit";
-import type { MaybePromise, RequestEvent } from "@sveltejs/kit/types/private";
+import type { RequestEvent, RequestHandlerOutput } from "@sveltejs/kit";
+import type { MaybePromise } from "@sveltejs/kit/types/private";
 import type { Auth } from "../auth";
 import { Provider, ProviderConfig } from "./base";
 
