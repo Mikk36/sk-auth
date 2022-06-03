@@ -5,6 +5,7 @@ import * as jsonwebtoken from "jsonwebtoken";
 import type { JWT, Session } from "./interfaces";
 import { join } from "./path";
 import type { Provider } from "./providers";
+import ms from "ms";
 
 interface AuthConfig {
   providers: Provider[];
@@ -126,15 +127,13 @@ export class Auth {
     const jwt = this.signToken(token);
     const redirect = await this.getRedirectUrl(url.host, redirectUrl ?? undefined);
 
-    const expires = new Date();
-    expires.setMonth(expires.getMonth() + 1);
     const cookieData = cookie.serialize(
       "svelteauthjwt",
       jwt,
       {
         path: "/",
         httpOnly: true,
-        expires,
+        expires: new Date(Date.now() + ms(this.config?.jwtExpiresIn ?? "30d")),
       },
     );
 
@@ -155,15 +154,13 @@ export class Auth {
       const token = this.setToken(headers, {});
       const jwt = this.signToken(token);
 
-      const expires = new Date();
-      expires.setMonth(expires.getMonth() + 1);
       const cookieData = cookie.serialize(
         "svelteauthjwt",
         jwt,
         {
           path: "/",
           httpOnly: true,
-          expires,
+          expires: new Date(Date.now() + ms(this.config?.jwtExpiresIn ?? "30d")),
         },
       );
 
